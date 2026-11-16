@@ -1,13 +1,11 @@
 # lukax/llms-txt-action
 
-> GitHub Action that generates llms.txt and llms-full.txt for a website, docs or repository using the llms.ink API.
+> A GitHub Action that generates, commits, checks and reports on llms.txt files for websites, docs and repositories using the llms.ink API.
 
-Supports write, commit, pr, check and comment modes for llms.txt; `aeo` mode (llms.ink's agent's-eye report as annotations and a pull request comment, failing per `aeo-fail-on`, with `autofix` pull requests for robots.txt, `_headers` and llms.txt); IndexNow submissions of changed pages after a deploy (`indexnow-key`); and `context` mode (version-pinned dependency docs in `.context/` as pull requests). Optional API key. Commits and pull requests made with the default GITHUB_TOKEN do not trigger other workflows.
+The action modes include write, commit, pr, check, comment, aeo, context, inspect and indexnow. Commits and pull requests made with the default GITHUB_TOKEN do not trigger other workflows.
 
 ## Start here
 
-- [README](https://raw.githubusercontent.com/lukax/llms-txt-action/main/README.md)
+- [README](https://raw.githubusercontent.com/lukax/llms-txt-action/HEAD/README.md)
 
 <!-- Generated with https://llms.ink -->
-
-- [Hosted inspection](https://llms.ink/inspect/): opt-in mode inspect in v1.4.0; explicit files, enabled API key, content-bound receipts.
