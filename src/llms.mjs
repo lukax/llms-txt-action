@@ -17,9 +17,9 @@ export class LlmsInkError extends Error {
  * GET (or POST `body` as text/markdown) with the same retry policy the composite action had with curl --retry 2: up to two more tries on timeouts,
  * network errors, 408, 429 and 5xx, waiting Retry-After (capped at a minute) or 1s, then 2s.
  */
-async function request(path, params, { fetch, apiKey, sleep, api = API }, body) {
+async function request(path, params, { fetch, apiKey, sleep, api = API, source }, body) {
   const url = new URL(`${api}/${path}`);
-  for (const [k, v] of Object.entries(params)) if (v !== undefined) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries({ ...params, source })) if (v !== undefined) url.searchParams.set(k, v);
   const headers = { 'User-Agent': USER_AGENT, Accept: 'application/json' };
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
   if (body !== undefined) headers['Content-Type'] = 'text/markdown; charset=utf-8';

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 — 2026-11-17
+
+- With `LLMS_INK_SOURCE: init` in the step's environment (what `llms-ink init` 0.9.1+ writes), requests to llms.ink carry `source=init`, so runs from an install can be counted. No other input or behavior changes.
+
 ## 1.5.0 — 2026-11-15
 
 - Add explicit `mode: inspect-context` with required `inspect-dir`. Bundle the CLI 0.8.0 pack inspector; no package installation or checkout executable is used during inspection.

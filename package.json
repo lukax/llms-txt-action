@@ -1,6 +1,6 @@
 {
   "name": "llms-txt-action",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "private": true,
   "description": "GitHub Action: generate, commit, PR, check or comment on llms.txt; report what AI agents see and fix it in PRs; IndexNow on deploy; dependency docs in .context. With llms.ink. No dependencies.",
   "type": "module",

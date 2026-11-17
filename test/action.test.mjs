@@ -87,6 +87,15 @@ test('write (default): same request and file as v1, outputs, summary', async () 
   assert.match(again.summary, /No section changes in `llms.txt`/);
 });
 
+test('a workflow written by llms-ink init marks its llms.ink requests with source=init; others never do', async () => {
+  const init = setup({ mode: 'check' }, { env: { LLMS_INK_SOURCE: 'init' } });
+  await init.go();
+  assert.deepEqual(llmsCalls(init.mock)[0].query, { url: 'https://acme.test', source: 'init' });
+  const other = setup({ mode: 'check' }, { env: { LLMS_INK_SOURCE: 'evil' } });
+  await other.go();
+  assert.deepEqual(llmsCalls(other.mock)[0].query, { url: 'https://acme.test' });
+});
+
 test('write: full-path, nested dirs, fresh false, generated, api key', async () => {
   const t = setup({ path: 'public/llms.txt', 'full-path': 'public/llms-full.txt', fresh: 'false', generated: 'true', 'api-key': 'lk_abc' });
   const r = await t.go();

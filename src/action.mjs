@@ -101,7 +101,8 @@ export async function run({ env, fetch, sleep, signal, stdout = (s) => process.s
     if (inputs.inspectDir && inputs.mode !== 'inspect-context') throw new Error('inspect-dir requires explicit inspect-context mode.');
     if (inputs.mode === 'indexnow' && !inputs.indexnowKey) throw new Error('`mode: indexnow` needs `indexnow-key`.');
     if (inputs.apiKey) log(`::add-mask::${inputs.apiKey}`);
-    const deps = { fetch, sleep: sleep ?? (ms => new Promise(resolve => setTimeout(resolve, ms))), apiKey: inputs.apiKey, api: env.LLMS_INK_API || undefined };
+    // `llms-ink init` writes `LLMS_INK_SOURCE: init` into its workflow, so llms.ink can count runs from an install.
+    const deps = { fetch, sleep: sleep ?? (ms => new Promise(resolve => setTimeout(resolve, ms))), apiKey: inputs.apiKey, api: env.LLMS_INK_API || undefined, source: env.LLMS_INK_SOURCE === 'init' ? 'init' : undefined };
     const github = () => gitHub({ token: inputs.token, repository: env.GITHUB_REPOSITORY ?? '', api: env.GITHUB_API_URL, fetch });
     const c = { inputs, env, deps, fetch, exec, log, annotate, summary, outputs, cwd, at, github, packSleep: sleep, signal };
 
