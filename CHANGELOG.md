@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.0 — 2026-11-18
+
+- `aeo` mode: `issue: true` keeps one issue labelled `llms-ink` open while the report has failures (warnings too with `aeo-fail-on: warn`), updated in place on every run and closed with a comment when they are gone. Off pull requests only; needs `issues: write`. New output `issue-url`. Existing behavior is unchanged without the input.
+
 ## 1.5.1 — 2026-11-17
 
 - With `LLMS_INK_SOURCE: init` in the step's environment (what `llms-ink init` 0.9.1+ writes), requests to llms.ink carry `source=init`, so runs from an install can be counted. No other input or behavior changes.

@@ -109,6 +109,41 @@ test('aeo: one sticky comment per url on pull requests, updated in place; a toke
   assert.match(r.stdout, /::warning title=llms.ink::Couldn’t comment on #8/);
 });
 
+test('aeo issue: one tracking issue off pull requests, updated in place, closed when the report is clean; never on a PR', async () => {
+  const t = setup({ mode: 'aeo', issue: 'true', 'aeo-fail-on': 'none' });
+  const first = await t.go();
+  await t.go();
+  const { issues } = t.mock.state;
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].state, 'open');
+  assert.deepEqual(issues[0].labels, ['llms-ink']);
+  assert.match(issues[0].title, /^AI agents can’t fully read acme\.test: 1 failed, 3 warnings$/);
+  assert.match(issues[0].body, /^<!-- llms-txt-action:aeo:https:\/\/acme\.test -->\n### Agent's-eye view/);
+  assert.equal(first.outputs['issue-url'], issues[0].html_url);
+
+  t.mock.state.report = { ...REPORT, summary: { pass: 9, warn: 2, fail: 0, info: 0 } };
+  await t.go();
+  assert.equal(issues[0].state, 'closed', 'warnings alone don’t keep it open unless aeo-fail-on is warn');
+  assert.match(t.mock.state.comments.get(issues[0].number)[0].body, /^Every check passes now/);
+  await t.go();
+  assert.equal(issues.length, 1, 'a clean report opens nothing');
+
+  const warned = setup({ mode: 'aeo', issue: 'true', 'aeo-fail-on': 'warn' });
+  warned.mock.state.report = { ...REPORT, summary: { pass: 9, warn: 2, fail: 0, info: 0 } };
+  await warned.go();
+  assert.equal(warned.mock.state.issues.length, 1);
+
+  const onPull = setup({ mode: 'aeo', issue: 'true', 'aeo-fail-on': 'none' }, { event: pr(9) });
+  await onPull.go();
+  assert.equal(onPull.mock.state.issues.length, 0);
+
+  const forbidden = setup({ mode: 'aeo', issue: 'true', 'aeo-fail-on': 'none' });
+  forbidden.mock.state.forbidIssues = true;
+  const r = await forbidden.go();
+  assert.equal(r.ok, true);
+  assert.match(r.stdout, /::warning title=llms.ink::Couldn’t update the tracking issue/);
+});
+
 test('aeo: a report error (e.g. not deployed yet: 404) fails with the problem detail', async () => {
   const t = setup({ mode: 'aeo' });
   t.mock.state.report = null;

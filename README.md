@@ -290,6 +290,10 @@ robots.txt and Content-Signal lines that let search bots in while keeping your t
 Cloudflare Pages), and llms.txt. Files go next to the existing ones, else in `public/` or `static/`, or in
 `autofix-dir`. Nothing else is ever changed; review before merging.
 
+Add `issue: true` (with `issues: write`) on a schedule or after a deploy to hear about problems where the team already
+works: one issue labelled `llms-ink` lists the failures with their fixes, is updated in place on every run, and is
+closed with a comment when every check passes again. It is never opened on pull requests, which get the comment.
+
 ### IndexNow after each deploy
 
 ```yaml
@@ -382,6 +386,7 @@ An invalid or revoked key fails the job with `401 invalid_key`; the action never
 | `aeo-fail-on` | `fail` | `aeo` mode: `fail` fails the job on any failed check, `warn` also on warnings, `none` never. |
 | `autofix` | `false` | `aeo` mode: open or update a pull request applying the report's robots.txt, `_headers` and llms.txt fixes. |
 | `autofix-dir` | (empty) | `autofix`: folder for fixed files. Default: next to the existing file, else `public/` or `static/`, else the root. |
+| `issue` | `false` | `aeo` mode, off pull requests: keep one `llms-ink` issue open while the report has failures (warnings too with `aeo-fail-on: warn`); it closes when they are gone. |
 | `indexnow-key` | (empty) | After a non-inspection mode succeeds, submit changed URLs to IndexNow. Ignored by `inspect` and `inspect-context`. The key must be served at `https://<site>/<key>.txt`. |
 | `indexnow-urls` | (empty) | URLs or paths to submit, one per line or comma-separated. Default: the pages the deployed or pushed commit changed, matched against the sitemap. |
 | `indexnow-key-location` | (empty) | The key file's URL or path when it isn't `/<key>.txt` (same host). |
@@ -398,6 +403,7 @@ An invalid or revoked key fails the job with `401 invalid_key`; the action never
 | `tokens` | Estimated tokens in llms.txt (in `check` mode, in the published file). |
 | `path` | Where llms.txt was written; empty in `check` and `comment` modes. |
 | `pr-url` | The pull request opened or updated in `pr` and `context` modes and by `autofix` (or the open one when nothing changed). |
+| `issue-url` | `aeo` mode with `issue`: the tracking issue opened, updated or closed by this run (empty when there was nothing to report). |
 | `source` | `generated` when llms.ink wrote the file, `native` when the site publishes its own llms.txt (copied as is). |
 | `pages` | Links in llms.txt. |
 | `aeo-fail` | `aeo` mode: checks that failed. |

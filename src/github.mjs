@@ -130,6 +130,28 @@ export function gitHub({ token, repository, api = 'https://api.github.com', fetc
       }
       return request('POST', `/issues/${number}/comments`, { body });
     },
+
+    /** The open issue (never a pull request) labelled `label` whose body contains `marker`, or null. */
+    async markedIssue(label, marker) {
+      for (let page = 1; ; page++) {
+        const list = (await request('GET', `/issues?state=open&labels=${encodeURIComponent(label)}&per_page=100&page=${page}`)) ?? [];
+        const mine = list.find((i) => !i.pull_request && i.body?.includes(marker));
+        if (mine) return mine;
+        if (list.length < 100) return null;
+      }
+    },
+
+    createIssue(title, body, label) {
+      return request('POST', '/issues', { title, body, labels: [label] });
+    },
+
+    updateIssue(number, patch) {
+      return request('PATCH', `/issues/${number}`, patch);
+    },
+
+    commentOn(number, body) {
+      return request('POST', `/issues/${number}/comments`, { body });
+    },
   };
 }
 

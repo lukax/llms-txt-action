@@ -146,6 +146,10 @@ export function mockApi(repo = {}) {
     commits: new Map(),
     refs: new Map(),
     pulls: [],
+    /** Tracking issues (POST /issues); a pull request listed here would carry `pull_request`. */
+    issues: [],
+    /** When set, issue writes answer 403. */
+    forbidIssues: false,
     comments: new Map(),
     nextId: 1,
   };
@@ -266,6 +270,19 @@ export function mockApi(repo = {}) {
       const pr = state.pulls.find((y) => y.number === Number(x[1]));
       Object.assign(pr, body);
       return json(200, pr);
+    }
+    if (r === '/issues') {
+      if (method === 'GET') return json(200, state.issues.filter((i) => i.state === q.state && i.labels.includes(q.labels)));
+      if (state.forbidIssues) return json(403, { message: 'Resource not accessible by integration' });
+      const issue = { number: 300 + state.issues.length, state: 'open', title: body.title, body: body.body, labels: body.labels, html_url: `https://github.com/${REPO}/issues/${300 + state.issues.length}` };
+      state.issues.push(issue);
+      return json(201, issue);
+    }
+    if (method === 'PATCH' && (x = r.match(/^\/issues\/(\d+)$/))) {
+      const issue = state.issues.find((y) => y.number === Number(x[1]));
+      if (!issue) return json(404, { message: 'Not Found' });
+      Object.assign(issue, body);
+      return json(200, issue);
     }
     if ((x = r.match(/^\/issues\/(\d+)\/comments$/))) {
       const list = state.comments.get(Number(x[1])) ?? [];

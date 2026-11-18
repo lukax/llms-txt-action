@@ -57,6 +57,9 @@ inputs:
   autofix-dir:
     description: '`autofix`: the folder fixed files go in (e.g. `public`). Default: next to the existing file, else `public/` or `static/` when the repo has one, else the root.'
     default: ''
+  issue:
+    description: '`aeo` mode, off pull requests (a schedule or a deploy): keep one issue labelled `llms-ink` open while the report has failures (warnings too with `aeo-fail-on: warn`), updated in place, and close it when they are gone. Needs `issues: write`.'
+    default: 'false'
   indexnow-key:
     description: 'Submit changed URLs of `url`''s site to IndexNow (Bing, Yandex, Seznam, Naver, Yep…) after a non-inspection mode succeeds. Ignored by inspect and inspect-context. The key must be served at https://<site>/<key>.txt (checked first); mode: indexnow does only this.'
     default: ''
@@ -113,6 +116,9 @@ outputs:
   pr-url:
     description: The pull request opened or updated in `pr` and `context` modes and by `autofix` (or the open one, when nothing changed).
     value: ${{ steps.llms.outputs.pr-url }}
+  issue-url:
+    description: '`aeo` mode with `issue`: the tracking issue opened, updated or closed by this run (empty when there was nothing to report).'
+    value: ${{ steps.llms.outputs.issue-url }}
   source:
     description: '`generated` when llms.ink wrote the file; `native` when the site publishes its own llms.txt, which is copied as is.'
     value: ${{ steps.llms.outputs.source }}
@@ -152,6 +158,7 @@ runs:
         INPUT_AEO_FAIL_ON: ${{ inputs.aeo-fail-on }}
         INPUT_AUTOFIX: ${{ inputs.autofix }}
         INPUT_AUTOFIX_DIR: ${{ inputs.autofix-dir }}
+        INPUT_ISSUE: ${{ inputs.issue }}
         INPUT_INDEXNOW_KEY: ${{ inputs.indexnow-key }}
         INPUT_INDEXNOW_URLS: ${{ inputs.indexnow-urls }}
         INPUT_INDEXNOW_KEY_LOCATION: ${{ inputs.indexnow-key-location }}

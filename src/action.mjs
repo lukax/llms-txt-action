@@ -4,7 +4,7 @@ import { inspectContextMode } from './inspect-context.mjs';
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, posix, resolve } from 'node:path';
-import { AEO_FAIL_ON, aeoFailed, aeoMarker, checksOf, fixBody, fixFiles, reportMarkdown } from './aeo.mjs';
+import { AEO_FAIL_ON, aeoFailed, aeoMarker, checksOf, fixBody, fixFiles, reportLink, reportMarkdown } from './aeo.mjs';
 import { contextArgs, contextChanges, exec as spawnExec } from './context.mjs';
 import { gitHub, proposePull } from './github.mjs';
 import { changedUrls, checkKey, INDEXNOW_API, IndexNowError, parseUrls, sitemapUrls, submit } from './indexnow.mjs';
@@ -15,6 +15,8 @@ export const MODES = ['write', 'commit', 'pr', 'check', 'comment', 'aeo', 'conte
 export const CHECK_TARGETS = ['auto', 'file', 'live'];
 export const PR_BRANCH = 'llms-ink/llms-txt';
 export const AEO_BRANCH = 'llms-ink/aeo-fixes';
+/** The label on the `issue` input's tracking issue; it is how the next run finds it. */
+export const AEO_LABEL = 'llms-ink';
 export const CONTEXT_BRANCH = 'llms-ink/context';
 /** `commit-message` when it isn't set: also the pull request title. */
 const MESSAGES = { aeo: 'Fix agent access (llms.ink report)', context: 'Update dependency docs in .context' };
@@ -45,6 +47,7 @@ export function readInputs(env) {
     aeoFailOn: get('aeo-fail-on', 'fail').toLowerCase(),
     autofix: bool('autofix', false),
     autofixDir: get('autofix-dir'),
+    issue: bool('issue', false),
     indexnowKey: get('indexnow-key'),
     indexnowUrls: get('indexnow-urls'),
     indexnowKeyLocation: get('indexnow-key-location'),
@@ -84,7 +87,7 @@ export async function run({ env, fetch, sleep, signal, stdout = (s) => process.s
   /** `props`: extra properties before `title`, each ending in a comma, e.g. `file=llms.txt,line=3,`. */
   const annotate = (level, title, message, props = '') => log(`::${level} ${props}title=${prop(title)}::${esc(message)}`);
   const inputs = readInputs(env);
-  const outputs = { changed: 'false', tokens: '', path: '', 'pr-url': '', source: '', pages: '', 'aeo-fail': '', 'aeo-warn': '', 'indexnow-submitted': '' };
+  const outputs = { changed: 'false', tokens: '', path: '', 'pr-url': '', 'issue-url': '', source: '', pages: '', 'aeo-fail': '', 'aeo-warn': '', 'indexnow-submitted': '' };
   const summary = [];
   const cwd = env.GITHUB_WORKSPACE || process.cwd();
   const at = (p) => resolve(cwd, p);
@@ -286,7 +289,8 @@ async function llmsMode({ inputs, env, deps, log, annotate, summary, outputs, at
 
 /**
  * `aeo`: the agent's-eye report as annotations, job summary and (on pull requests) one sticky comment; with
- * `autofix`, a pull request with its robots.txt, _headers and llms.txt fixes. Fails per `aeo-fail-on`.
+ * `autofix`, a pull request with its robots.txt, _headers and llms.txt fixes; with `issue`, one tracking issue
+ * that stays open while the report has problems. Fails per `aeo-fail-on`.
  */
 async function aeoMode({ inputs, env, deps, log, annotate, summary, outputs, github }) {
   if (!AEO_FAIL_ON.includes(inputs.aeoFailOn)) throw new Error(`\`aeo-fail-on\` must be one of ${AEO_FAIL_ON.join(', ')}; got \`${inputs.aeoFailOn}\`.`);
@@ -310,6 +314,30 @@ async function aeoMode({ inputs, env, deps, log, annotate, summary, outputs, git
       log(`Comment: ${comment.html_url}`);
     } catch (err) {
       annotate('warning', 'llms.ink', `Couldn’t comment on #${number}: ${err.message}. The job needs \`pull-requests: write\`.`);
+    }
+  }
+
+  // Off pull requests (a schedule, a deploy): one issue holds the current problems and closes when they are gone.
+  if (inputs.issue && !number) {
+    const marker = aeoMarker(inputs.url);
+    const problems = aeoFailed(r, inputs.aeoFailOn === 'warn' ? 'warn' : 'fail');
+    try {
+      const gh = github();
+      const open = await gh.markedIssue(AEO_LABEL, marker);
+      const text = `${marker}\n${body}`;
+      if (problems) {
+        const title = `AI agents can’t fully read ${new URL(r.url ?? inputs.url).host}: ${fail} failed, ${warn} warning${warn === 1 ? '' : 's'}`;
+        const issue = open ? (open.body === text && open.title === title ? open : await gh.updateIssue(open.number, { title, body: text })) : await gh.createIssue(title, text, AEO_LABEL);
+        outputs['issue-url'] = issue.html_url;
+        log(`Issue: ${issue.html_url}`);
+      } else if (open) {
+        await gh.commentOn(open.number, `Every check passes now${r.checkedAt ? ` (checked ${r.checkedAt})` : ''}: [full report](${reportLink(r.url ?? inputs.url)}).`);
+        await gh.updateIssue(open.number, { state: 'closed', state_reason: 'completed' });
+        outputs['issue-url'] = open.html_url;
+        log(`Closed: ${open.html_url}`);
+      }
+    } catch (err) {
+      annotate('warning', 'llms.ink', `Couldn’t update the tracking issue: ${err.message}. The job needs \`issues: write\`.`);
     }
   }
 
